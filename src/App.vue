@@ -26,4 +26,16 @@
 #nav a.router-link-exact-active {
   color: #42b983;
 }
+
+.toggle-section {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.toggle-label {
+    font-family: Poppins, sans-serif;
+    font-size: 1rem;
+    color: black;
+}
 </style>

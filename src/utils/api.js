@@ -1,11 +1,11 @@
 import axios from "axios";
 
-const url = `https://movie-picker-db.herokuapp.com/movies/`;
+const url = `https://bucketlist-app-navy.vercel.app/bucketList/`;
 
 
-export const addMovie = async(details) => {
-    console.log('Adding movies here with this details :', details);
-    const apiUrl = `${url}addMovie`;
+export const addIteminBucketList = async(details) => {
+    console.log('Adding item here with this details :', details);
+    const apiUrl = `${url}addItem`;
 
     try{
         const res = await axios.post(apiUrl,details);
@@ -19,11 +19,11 @@ export const addMovie = async(details) => {
 }
 
 
-export const getMovies = async() => {
-    console.log('Getting movies:');
-    const apiUrl = `${url}getAllMovies`;
+export const getAllItems = async(urgency) => {
+    console.log('Getting items:');
+    const apiUrl = `${url}getAllItems`;
     try{
-        const res = await axios.get(apiUrl);
+        const res = await axios.post(apiUrl, {'urgency': urgency});
         console.log(res);
         return res.data;
     }
@@ -33,16 +33,46 @@ export const getMovies = async() => {
     }
 }
 
-export const getRandomMovie = async() => {
-    console.log('Random movies:');
-    const apiUrl = `${url}randomMovie`;
+export const getRandomItem = async(urgency) => {
+    console.log('Random items:');
+    const apiUrl = `${url}randomItem`;
     try{
-        const res = await axios.get(apiUrl);
+        const res = await axios.post(apiUrl, {'urgency': urgency});
         console.log(res);
         return res.data;
     }
     catch(err){
         console.log(err);
         return err;
+    }
+}
+
+export const updateItem = async(details) => {
+    console.log('Updating movies here with this details :', details);
+    const apiUrl = `${url}updateItem`;
+
+    try{
+        const res = await axios.post(apiUrl,details);
+        console.log(res);
+        return res.data
+    }
+    catch(err){
+        console.log(err)
+        return err
+    }
+}
+
+export const deleteItem = async(details) => {
+    console.log('Deleting movies here with this details :', details);
+    const apiUrl = `${url}deleteItem`;
+
+    try{
+        const res = await axios.post(apiUrl,details);
+        console.log(res);
+        return res.data
+    }
+    catch(err){
+        console.log(err)
+        return err
     }
 }

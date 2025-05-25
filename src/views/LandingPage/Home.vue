@@ -2,26 +2,26 @@
     
 
     <div class="flex-container">
-        <div class="border" @click="setValue(1)">Add Movie</div>
-        <div class="border" @click="setValue(2)" >See Movie List</div>
-        <div class="border" @click="[setValue(3), changePrediction($event)]"  >Pick Movie</div>
-        
+        <div class="border" @click="setValue(1)">Add Item</div>
+        <div class="border" @click="setValue(2)" >View Long-Term BucketList</div>
+        <div class="border" @click="setValue(3)">View Short-Term Goals</div>
+        <div class="border" @click="[setValue(4), changePrediction($event, urgency=false)]" >Pick Long-Term Item</div>
+        <div class="border" @click="[setValue(5), changePrediction($event, urgency=true)]" >Pick Short-Term Item</div>
 
     </div>
 
 
     <div class="formdata" v-show="pageSelected == 1">
-        <input type="text" placeholder="Movie Name..." v-model="movieName">
-        <input type="text" placeholder="Your name..." v-model="userName">
-        
-        <!-- <VueSingleSelect 
-            v-model="userName"
-            :options="['Moupali Saha', 'Rishi Raj Roy']"
-            placeholder="Who are you?"
-            :classes="{
-                input: 'input-control'
-            }"
-            ></VueSingleSelect> -->
+        <input type="text" placeholder="Enter Item in BucketList..." v-model="movieName">
+        <input type="text" placeholder="Please enter your name..." v-model="userName">
+         <div class="toggle-section">
+            <label class="toggle-label">Long-Term Goal:</label>
+                <button @click="toggle" :class="['px-6 py-2 rounded-lg text-white transition-colors duration-300', isYes ? 'bg-green-500 hover:bg-green-600' : 'bg-red-500 hover:bg-red-600']">
+                    {{ isYes ? 'Yes' : 'No' }}
+                 </button>
+        </div>
+
+    
         
         <button :disabled="!movieName || !userName" class="addButton" @click="insertMovie($event)"> ADD </button>
 
@@ -29,9 +29,9 @@
     </div>
 
     <div v-show="pageSelected == 2">
-            <div class="view-movies" v-show="movieList.length > 0">
+            <div class="view-movies" v-show="movieListLongTerm.length > 0">
 
-                <div v-for="(movie,index) in movieList" :key="index" class="movie-container">
+                <div v-for="(movie,index) in movieListLongTerm" :key="index" class="movie-container">
                     
                         <div class="movie-name">{{ movie.name }}</div>
                         <div class="movie-username">{{ movie.added_by }}</div>
@@ -43,41 +43,83 @@
 
             </div>
 
-            <div v-show="movieList.length == 0">
+            <div v-show="movieListLongTerm.length == 0">
                 <img :src="Animation" alt="Loading image" class="custom-loader">
             </div>
         
     </div>
 
-
     <div v-show="pageSelected == 3">
+            <div class="view-movies" v-show="movieListShortTerm.length > 0">
 
-        <div v-show="predictedMovie.length != 0">
+                <div v-for="(movie,index) in movieListShortTerm" :key="index" class="movie-container">
+                    
+                        <div class="movie-name">{{ movie.name }}</div>
+                        <div class="movie-username">{{ movie.added_by }}</div>
+                    
+
+                </div>
+            </div>
+
+            <div v-show="movieListShortTerm.length == 0">
+                <img :src="Animation" alt="Loading image" class="custom-loader">
+            </div>     
+    </div>
+
+
+    <div v-show="pageSelected == 4">
+
+        <div v-show="predictedMovieLongTerm.length != 0">
             <div class="random-movie">
-                <div class="quotes">The movie to be seen today is</div>
+                <div class="quotes">We finally are gonna complete:</div>
                 <div class="surround">
                     
-                    <div class="movie"> " {{ predictedMovie }} "</div>
-                    <button class="selectAnother" @click="changePrediction($event)">Change Movie</button>
+                    <div class="movie"> " {{ predictedMovieLongTerm }} "</div>
+                    <button class="selectAnother" @click="changePrediction($event, false)">Change Activity</button>
                     
                 </div>
+                <div class="quotes">WE finally did it, Shir-bear! TOGETHER❤️</div>
                 
             </div>
 
         </div>
 
 
-        <div v-show="predictedMovie.length == 0">
+        <div v-show="predictedMovieLongTerm.length == 0">
             <img :src="Animation" alt="Loading image" class="custom-loader">
         </div>
 
     </div> 
 
+    <div v-show="pageSelected == 5">
+
+        <div v-show="predictedMovieShortTerm.length != 0">
+            <div class="random-movie">
+                <div class="quotes">Today we are gonna:</div>
+                <div class="surround">
+                    
+                    <div class="movie"> " {{ predictedMovieShortTerm }} "</div>
+                    <button class="selectAnother" @click="changePrediction($event, true)">Change Activity</button>
+                    
+                </div>
+                <div class="quotes">I love you, my bear ❤️. Always at your disposal. </div>
+            </div>
+
+
+        </div>
+
+
+        <div v-show="predictedMovieShortTerm.length == 0">
+            <img :src="Animation" alt="Loading image" class="custom-loader">
+        </div>
+
+    </div>
+
 
 </template>
 
 <script>
-import { getMovies, addMovie, getRandomMovie } from '@/utils/api.js';
+import { addIteminBucketList, getAllItems, getRandomItem, updateItem, deleteItem } from '@/utils/api.js';
 import VueSingleSelect from "vue-single-select";
 import vSelect from 'vue-select';
 import Animation from "@/assets/LoadingAnimation.gif";
@@ -85,11 +127,14 @@ export default {
     data(){
         return{
             pageSelected : 1,
-            movieList : [],
+            movieListLongTerm : [],
+            movieListShortTerm : [],
             movieName : '',
             userName : '',
             selectedMovie : '',
-            predictedMovie : '',
+            predictedMovieShortTerm : '',
+            predictedMovieLongTerm : '',
+            isYes : false,
             Animation
 
         }
@@ -101,16 +146,19 @@ export default {
 
     methods:{
         
-        async loadMovies(){
+        async loadMovies(urgency=false){
             try{
-                const data = await getMovies();
-            if(data.success){
-                console.log(data.data)
-                this.movieList = data.data;
-            
-            }
-            
-            
+                print('Rishi urgency is :', urgency)
+                const data = await getAllItems(urgency);
+                if(data.success){
+                    console.log(data.data)
+                    if(urgency){
+                        this.movieListShortTerm = data.data; 
+                    }
+                    else{
+                        this.movieListLongTerm = data.data; 
+                    }   
+                }
             }
             catch(err){
                 console.log('Err')
@@ -123,15 +171,17 @@ export default {
             
             const apiDetails = {
                 name : this.movieName,
-                username : this.userName
+                username : this.userName,
+                urgency : this.isYes
             }
 
             this.movieName = '';
             this.username = '';
+            this.isYes = false
 
 
             try{
-                const data = await addMovie(apiDetails)
+                const data = await addIteminBucketList(apiDetails)
                 if(data.success){
                     this.loadMovies();
                     alert('Movie inserted successfully!');
@@ -149,13 +199,18 @@ export default {
         },
 
 
-        async useRandomMovie(){
+        async useRandomMovie(urgency){
             
             try{
-            const data = await getRandomMovie();
+            const data = await getRandomItem(urgency);
             if(data.success){
-                this.predictedMovie = data.data.name
-
+                if(urgency){
+                    this.predictedMovieShortTerm = data.data.name
+                }
+                else{
+                    this.predictedMovieLongTerm = data.data.name
+                }
+                console.log('Predicted movie is :', this.predictedMovieShortTerm, this.predictedMovieLongTerm, data.data.name)
             }
 
             }
@@ -166,10 +221,10 @@ export default {
 
         },
 
-        changePrediction(e){
+        changePrediction(e, urgency = false){
             e.preventDefault()
             this.predictedMovie = '';
-            this.useRandomMovie();
+            this.useRandomMovie(urgency);
         },
 
 
@@ -182,14 +237,19 @@ export default {
         insertMovie(e){
             console.log('Entering here');
             e.preventDefault();
-            this.movieList = []
+            this.movieListLongTerm = [];
+            this.movieListShortTerm = [];
             this.useAddMovies(e);
 
+        },
+        toggle() {
+            this.isYes  = !this.isYes
         }
     },
 
     mounted(){
-        this.loadMovies();
+        this.loadMovies(false);
+        this.loadMovies(true);
     },
 
     watch:{
