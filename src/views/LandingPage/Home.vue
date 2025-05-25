@@ -120,8 +120,6 @@
 
 <script>
 import { addIteminBucketList, getAllItems, getRandomItem, updateItem, deleteItem } from '@/utils/api.js';
-import VueSingleSelect from "vue-single-select";
-import vSelect from 'vue-select';
 import Animation from "@/assets/LoadingAnimation.gif";
 export default {
     data(){
@@ -141,7 +139,6 @@ export default {
     },
 
     components:{
-        VueSingleSelect
     },
 
     methods:{
